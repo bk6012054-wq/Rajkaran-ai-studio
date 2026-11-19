@@ -1,0 +1,9 @@
+{
+  "name": "Rajkaran AI Studio",
+  "short_name": "Rajkaran Studio",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#090e1d",
+  "theme_color": "#10152b",
+  "description": "Record your voice and mix background music"
+}

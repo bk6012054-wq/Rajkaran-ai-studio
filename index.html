@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10152b">
+<link rel="manifest" href="manifest.json">
+<title>Rajkaran AI Studio</title>
+<style>
+:root{--bg:#090e1d;--card:#151e38;--line:#304064;--gold:#f5c15e;--txt:#f5f7ff;--muted:#b4bfd8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:Arial,sans-serif}
+header{padding:27px 16px;text-align:center;background:linear-gradient(130deg,#38205a,#101a3b)}
+header .tag{color:var(--gold);letter-spacing:2px;font-size:12px}h1{font-size:25px;margin:10px 0}header p{color:#d2d9eb;margin:0}
+main{max-width:760px;margin:auto;padding:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:17px;margin:13px 0}
+h2{font-size:18px;margin:0 0 13px}.buttons{display:flex;gap:9px;flex-wrap:wrap}
+button{border:0;border-radius:11px;padding:13px 15px;background:var(--gold);color:#211707;font-weight:bold}
+button.alt{background:#2a3b60;color:white}button:disabled{opacity:.4}
+audio{width:100%;margin:12px 0}label{display:block;margin:12px 0 6px;color:var(--muted)}
+input[type=file]{max-width:100%;color:var(--muted)}input[type=range]{width:100%;accent-color:var(--gold)}
+.status{margin-top:12px;color:var(--gold);min-height:24px;line-height:1.4}.hint{font-size:13px;color:var(--muted);line-height:1.55}
+.badge{display:inline-block;padding:5px 9px;border-radius:20px;background:#243454;color:#dce6ff;font-size:12px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:20px}
+</style>
+</head>
+<body>
+<header><div class="tag">YOUR PERSONAL MUSIC WORKSPACE</div><h1>🎙️ RAJKARAN AI STUDIO</h1><p>अपनी असली आवाज़ • म्यूजिक • ऑडियो इफेक्ट्स</p></header>
+<main>
+<section class="card">
+<span class="badge">स्टेप 1</span><h2>🎙️ अपनी आवाज़ रिकॉर्ड करें</h2>
+<div class="buttons"><button id="rec">🔴 रिकॉर्ड शुरू करें</button><button id="stop" class="alt" disabled>⏹ रिकॉर्ड रोकें</button></div>
+<div id="status" class="status">तैयार। रिकॉर्डिंग शुरू करने के लिए बटन दबाएँ।</div>
+<audio id="voice" controls></audio>
+<p class="hint">माइक्रोफोन के लिए यह ऐप HTTPS वेबसाइट पर खुलना चाहिए। फोन पूछे तो Microphone → Allow चुनें। अगर आपने डाउनलोड की हुई HTML फाइल सीधे खोली है, तो रिकॉर्डिंग अनुमति काम नहीं कर सकती।</p>
+</section>
+<section class="card">
+<span class="badge">स्टेप 2</span><h2>🎵 बैकग्राउंड म्यूजिक</h2>
+<label>फोन से म्यूजिक फाइल चुनें</label><input id="musicFile" type="file" accept="audio/*">
+<audio id="musicPreview" controls></audio>
+<label>म्यूजिक वॉल्यूम: <b id="mv">20%</b></label><input id="musicVol" type="range" min="0" max="100" value="20">
+</section>
+<section class="card">
+<span class="badge">स्टेप 3</span><h2>🎚️ आवाज़ के इफेक्ट्स</h2>
+<label>Echo: <b id="echoV">0%</b></label><input id="echo" type="range" min="0" max="60" value="0">
+<label>Reverb जैसा हल्का प्रभाव: <b id="reverbV">0%</b></label><input id="reverb" type="range" min="0" max="60" value="0">
+<label>आवाज़ की चमक (EQ): <b id="eqV">0</b></label><input id="eq" type="range" min="-12" max="12" value="0">
+<p class="hint">ये बेसिक ऑडियो इफेक्ट्स हैं। ये अभी AI AutoTune या अपने-आप सुर सुधारने का फीचर नहीं हैं।</p>
+</section>
+<section class="card">
+<span class="badge">स्टेप 4</span><h2>🎧 मिक्स तैयार करें</h2>
+<div class="buttons"><button id="make" class="alt" disabled>मिक्स बनाएं</button><button id="download" disabled>⬇ ऑडियो सेव करें</button></div>
+<audio id="mix" controls></audio>
+<p class="hint">सेव फाइल ब्राउज़र द्वारा समर्थित ऑडियो फॉर्मेट (आमतौर पर WebM) में होगी, MP3 नहीं।</p>
+</section>
+<section class="card">
+<h2>📌 आगे बनने वाले प्रो फीचर्स</h2>
+<p class="hint">अगले विकास चरण में असली pitch correction / AutoTune, noise reduction, vocal presets, MP3 export और Android APK जोड़े जाएँगे। इनके लिए अतिरिक्त ऑडियो इंजन/API और परीक्षण की जरूरत होगी।</p>
+</section>
+</main><footer>Rajkaran AI Studio • PWA Starter</footer>
+<script>
+const $=id=>document.getElementById(id);
+let recorder,stream,parts=[],voiceBlob,voiceURL,musicURL,mixURL;
+const setStatus=t=>$('status').textContent=t;
+const mime=()=>MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':(MediaRecorder.isTypeSupported('audio/mp4')?'audio/mp4':'');
+$('rec').onclick=async()=>{
+ try{
+  if(!navigator.mediaDevices?.getUserMedia)throw Error('माइक्रोफोन API उपलब्ध नहीं। HTTPS लिंक में खोलें।');
+  stream=await navigator.mediaDevices.getUserMedia({audio:true});
+  const mt=mime();recorder=mt?new MediaRecorder(stream,{mimeType:mt}):new MediaRecorder(stream);
+  parts=[];recorder.ondataavailable=e=>{if(e.data?.size)parts.push(e.data)};
+  recorder.onstop=()=>{
+   voiceBlob=new Blob(parts,{type:recorder.mimeType||parts[0]?.type||'audio/webm'});
+   if(voiceURL)URL.revokeObjectURL(voiceURL);voiceURL=URL.createObjectURL(voiceBlob);
+   $('voice').src=voiceURL;$('voice').load();$('make').disabled=false;
+   stream?.getTracks().forEach(t=>t.stop());stream=null;
+   setStatus('रिकॉर्डिंग तैयार है। अब मिक्स बनाएं दबाएँ।');
+  };
+  recorder.start(300);$('rec').disabled=true;$('stop').disabled=false;setStatus('🔴 रिकॉर्डिंग चल रही है…');
+ }catch(e){setStatus('माइक्रोफोन अनुमति/HTTPS समस्या: '+e.message);}
+};
+$('stop').onclick=()=>{if(recorder?.state==='recording'){recorder.stop();$('rec').disabled=false;$('stop').disabled=true;setStatus('रिकॉर्डिंग सेव हो रही है…');}};
+$('musicFile').onchange=()=>{const f=$('musicFile').files[0];if(!f)return;if(musicURL)URL.revokeObjectURL(musicURL);musicURL=URL.createObjectURL(f);$('musicPreview').src=musicURL;$('musicPreview').load();};
+[['musicVol','mv','%'],['echo','echoV','%'],['reverb','reverbV','%'],['eq','eqV','']].forEach(([a,b,c])=>$(a).oninput=()=>$(b).textContent=$(a).value+c);
+$('make').onclick=async()=>{
+ try{
+  const ac=new (window.AudioContext||window.webkitAudioContext)();await ac.resume();
+  const dest=ac.createMediaStreamDestination(),voiceBuf=await ac.decodeAudioData(await voiceBlob.arrayBuffer());
+  const src=ac.createBufferSource();src.buffer=voiceBuf;
+  const eq=ac.createBiquadFilter();eq.type='highshelf';eq.frequency.value=3000;eq.gain.value=Number($('eq').value);
+  const dry=ac.createGain();dry.gain.value=1;
+  src.connect(eq);eq.connect(dry);dry.connect(dest);
+  const delay=ac.createDelay(1);delay.delayTime.value=.22;const echoGain=ac.createGain();echoGain.gain.value=Number($('echo').value)/100;
+  dry.connect(delay);delay.connect(echoGain);echoGain.connect(dest);
+  const wet=ac.createGain();wet.gain.value=Number($('reverb').value)/100;const delay2=ac.createDelay(1);delay2.delayTime.value=.08;dry.connect(delay2);delay2.connect(wet);wet.connect(dest);
+  let mus;
+  if($('musicFile').files[0]){const mb=await $('musicFile').files[0].arrayBuffer(),buf=await ac.decodeAudioData(mb);mus=ac.createBufferSource();mus.buffer=buf;mus.loop=true;const mg=ac.createGain();mg.gain.value=Number($('musicVol').value)/100;mus.connect(mg).connect(dest);mus.start();}
+  const mt=mime();const mr=mt?new MediaRecorder(dest.stream,{mimeType:mt}):new MediaRecorder(dest.stream);let chunks=[];
+  mr.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
+  mr.onstop=()=>{const blob=new Blob(chunks,{type:mr.mimeType||'audio/webm'});if(mixURL)URL.revokeObjectURL(mixURL);mixURL=URL.createObjectURL(blob);$('mix').src=mixURL;$('mix').load();$('download').disabled=false;ac.close();};
+  mr.start(250);src.onended=()=>{if(mr.state==='recording')mr.stop();if(mus)mus.stop();};src.start();setStatus('मिक्स तैयार किया जा रहा है…');
+ }catch(e){setStatus('मिक्स नहीं बन पाया: '+e.message);}
+};
+$('download').onclick=()=>{if(!mixURL)return;const a=document.createElement('a');a.href=mixURL;a.download='Rajkaran-AI-Studio-Mix.webm';a.click();};
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script></body></html>
